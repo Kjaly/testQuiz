@@ -1,3 +1,4 @@
+// Обработчки событий, отслеживание загрузки страницы
 document.addEventListener('DOMContentLoaded', function () {
     const btnOpenModal = document.querySelector('#btnOpenModal');
     const modalBlock = document.querySelector('#modalBlock');
@@ -8,7 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const burgerBtn = document.getElementById('burger');
     const nextBtn = document.getElementById('next');
     const prevBtn = document.getElementById('prev');
+    const sendBtn = document.getElementById('send');
+    const modalDialog = document.querySelector('.modal-dialog');
 
+    
+    //Объект с вопросами
     const questions = [
         {
             question: "Какого цвета бургер?",
@@ -85,12 +90,28 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
 
+    let count = -100;
+    modalDialog.style.top = count + '%';
+    const animateModal = () =>{
+        modalDialog.style.top = count + '%';
+        count+= 3;
+
+        if (count < 0) {
+            requestAnimationFrame(animateModal);
+        } else {
+            count = -100;
+        }
+    }
+
+
     let  clientWidth =document.documentElement.clientWidth;
     if (clientWidth < 768){
         burgerBtn.style.display = 'flex';
     } else {
         burgerBtn.style.display = 'none';
     }
+
+    // Обработчкии событий открытие и закрытие окна
     window.addEventListener('resize',function () {
         clientWidth =document.documentElement.clientWidth;
         if (clientWidth < 768){
@@ -107,7 +128,9 @@ document.addEventListener('DOMContentLoaded', function () {
         playTest();
     })
 
+
     btnOpenModal.addEventListener('click', () => {
+        requestAnimationFrame(animateModal);
         modalBlock.classList.add('d-block');
         playTest();
     })
@@ -129,15 +152,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-
+    // функция начало тестирования
     const playTest = () => {
+        const obj = {};
+        const  finalAnswers = [];
+        // переменная с номером вопроса
         let numberQuestions = 0;
+
+        // функция рендера ответов
         const renderAnswers = (index) => {
             questions[index].answers.forEach((answer, index, arr) => {
                 const answerItem = document.createElement('div');
-                answerItem.classList.add('answers-item', 'd-flex', 'flex-column');
+                answerItem.classList.add('answers-item', 'd-flex', 'justify-content-center');
                 answerItem.innerHTML = `
-                <input type="${questions[index].type}" id="${answer.title}" name="answer" class="d-none">
+                <input type="${questions[index].type}" id="${answer.title}" name="answer" class="d-none" value="'${answer.title}">
                 <label for="${answer.title}" class="d-flex flex-column justify-content-between">
                   <img class="answerImg" src=${answer.url} alt="burger">
                   <span>${answer.title}</span>
@@ -145,27 +173,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 `
                 formAnswers.appendChild(answerItem);
             })
-            console.log(questions.length);
+            // console.log(numberQuestions);
         }
+
+        // функция рендера вопросов и ответов
         const renderQuestions = (indexQuestion) => {
             formAnswers.innerHTML = ``;
-            questionTitle.textContent = `${questions[indexQuestion].question}`;
-            renderAnswers(indexQuestion);
-            if (numberQuestions == 0){
-                prevBtn.style.display = 'none'
-            } else {
-                prevBtn.style.display = 'flex';
+
+            if(numberQuestions >= 0 && numberQuestions <= questions.length - 1){
+                questionTitle.textContent = `${questions[indexQuestion].question}`;
+
+                renderAnswers(indexQuestion);
+                sendBtn.classList.add('d-none');
+                prevBtn.classList.remove('d-none');
+                nextBtn.classList.remove('d-none');
             }
 
-            if (numberQuestions == questions.length-1) {
-                nextBtn.style.display = 'none';
-            } else {
-                nextBtn.style.display = 'flex';
+            switch (numberQuestions) {
+                case 0:
+                    prevBtn.classList.add('d-none');
+                    break;
+                case questions.length:
+                    questionTitle.textContent='';
+                    nextBtn.classList.add('d-none');
+                    prevBtn.classList.add('d-none');
+                    sendBtn.classList.remove('d-none');
+                    formAnswers.innerHTML = `
+            <div class= 'form-group'>
+            <label for="numberPhone">Enter your number</label>
+            <input type="phone" class="form-control" id="numberPhone">
+            `;
+
+                const numberPhone = document.getElementById('numberPhone');
+                numberPhone.addEventListener('input',(event) => {
+                    event.target.value =  event.target.value.replace(/[^0-9+-]/,'')
+                })
+                    break;
+                case questions.length+1:
+                    formAnswers.textContent = 'Спасибо за пройденный опрос!';
+                    sendBtn.classList.add('d-none');
+
+
+                    for(let key in obj){
+                        let newObj = {};
+                        newObj[key]=obj[key];
+                        finalAnswers.push(newObj);
+
+                    }
+                    console.log(finalAnswers);
+
+                    setTimeout(()=>{
+                        modalBlock.classList.remove('d-block') }, 2000);
+                    break;
+
             }
+
         }
+        // запуск рендера
         renderQuestions(numberQuestions);
 
+        const checkAnswer = () =>{
+            const inputs = [...formAnswers.elements].filter((input)=> input.checked || input.id ==='numberPhone');
+            inputs.forEach((input, index)=>{
+                if(numberQuestions >= 0 && numberQuestions <= questions.length - 1){
+                    obj[`${index}_${questions[numberQuestions].question}`] = input.value;
+                }
+                if (numberQuestions === questions.length){
+                    obj['Номер телефона'] = input.value;
+                }
+            });
+
+            // finalAnswers.push(obj);
+        }
+        //Обработчики событий кнопок next и prev
         nextBtn.onclick = () => {
+            checkAnswer();
             numberQuestions++;
             renderQuestions(numberQuestions);
         }
@@ -175,6 +257,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         }
 
+
+        sendBtn.onclick = () =>{
+            checkAnswer();
+            numberQuestions++;
+            renderQuestions();
+        }
     }
 
 
