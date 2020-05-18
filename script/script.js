@@ -12,82 +12,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const sendBtn = document.getElementById('send');
     const modalDialog = document.querySelector('.modal-dialog');
 
-    
-    //Объект с вопросами
-    const questions = [
-        {
-            question: "Какого цвета бургер?",
-            answers: [
-                {
-                    title: 'Стандарт',
-                    url: './image/burger.png'
-                },
-                {
-                    title: 'Черный',
-                    url: './image/burgerBlack.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Из какого мяса котлета?",
-            answers: [
-                {
-                    title: 'Курица',
-                    url: './image/chickenMeat.png'
-                },
-                {
-                    title: 'Говядина',
-                    url: './image/beefMeat.png'
-                },
-                {
-                    title: 'Свинина',
-                    url: './image/porkMeat.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Дополнительные ингредиенты?",
-            answers: [
-                {
-                    title: 'Помидор',
-                    url: './image/tomato.png'
-                },
-                {
-                    title: 'Огурец',
-                    url: './image/cucumber.png'
-                },
-                {
-                    title: 'Салат',
-                    url: './image/salad.png'
-                },
-                {
-                    title: 'Лук',
-                    url: './image/onion.png'
-                }
-            ],
-            type: 'checkbox'
-        },
-        {
-            question: "Добавить соус?",
-            answers: [
-                {
-                    title: 'Чесночный',
-                    url: './image/sauce1.png'
-                },
-                {
-                    title: 'Томатный',
-                    url: './image/sauce2.png'
-                },
-                {
-                    title: 'Горчичный',
-                    url: './image/sauce3.png'
-                }
-            ],
-            type: 'radio'
-        }
-    ];
+    const firebaseConfig = {
+        apiKey: "AIzaSyBcZn1sHSEh1J-u5zQbL7K-2xFALnGWP-4",
+        authDomain: "testquiz-c138b.firebaseapp.com",
+        databaseURL: "https://testquiz-c138b.firebaseio.com",
+        projectId: "testquiz-c138b",
+        storageBucket: "testquiz-c138b.appspot.com",
+        messagingSenderId: "989042803016",
+        appId: "1:989042803016:web:312302a859095c540ff37d",
+        measurementId: "G-KDJ48MHMLN"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    //Функция получения данных
+    const getData = () =>{
+        formAnswers.textContent = 'LOAD';
+        nextBtn.classList.add('d-none');
+        prevBtn.classList.add('d-none');
+
+        firebase.database().ref().child('questions').once('value')
+            .then(snap => playTest(snap.val()))
+    }
+
+
 
 
     let count = -100;
@@ -132,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btnOpenModal.addEventListener('click', () => {
         requestAnimationFrame(animateModal);
         modalBlock.classList.add('d-block');
-        playTest();
+        getData();
     })
 
     closeModal.addEventListener('click', () => {
@@ -153,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // функция начало тестирования
-    const playTest = () => {
+    const playTest = (questions) => {
         const obj = {};
         const  finalAnswers = [];
         // переменная с номером вопроса
@@ -220,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         finalAnswers.push(newObj);
 
                     }
-                    console.log(finalAnswers);
+
 
                     setTimeout(()=>{
                         modalBlock.classList.remove('d-block') }, 2000);
@@ -261,7 +210,12 @@ document.addEventListener('DOMContentLoaded', function () {
         sendBtn.onclick = () =>{
             checkAnswer();
             numberQuestions++;
-            renderQuestions();
+            renderQuestions(numberQuestions);
+            firebase
+                .database()
+                .ref()
+                .child('contacts')
+                .push(finalAnswers)
         }
     }
 
